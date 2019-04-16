@@ -9,6 +9,7 @@ import * as xml from "xml-js";
 import { User } from "./src/controller/User";
 import { createConnection, getRepository, getConnection } from "typeorm";
 import { user_book_read } from "./src/entity/BookReadingEntity";
+import { Book } from "./src/controller/Book";
 
 const app = express();
 app.use(bodyParser.json());
@@ -24,6 +25,9 @@ createConnection().then(connection => {
 
 const usuario = new User();
 usuario.User(app);
+
+const book = new Book();
+book.Book(app);
 
 app.get("/", (req: Request, res: Response) => {
 	res.json("Server funcionando!");
