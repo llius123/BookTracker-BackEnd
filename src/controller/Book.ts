@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { book } from "../entity/BookEntity";
 import * as https from "https";
 import * as xml from "xml-js";
+import fetch from "node-fetch";
 
 export class Book {
 	public Book(app) {
@@ -14,9 +15,10 @@ export class Book {
 
 		app.get("/searchapi/:name", async (req: Request, res: Response) => {
 			const name: string = req.params.name;
-			Promise.all([this.googleApi(name)]).then(data => {
-				res.json(data);
-			});
+			const bookGoogle = await this.googleApi(req.params.name);
+			let bookGoodRead = await this.goodReadApi(req.params.name);
+			const bookOpenlibrary = await this.openlibraryApi(req.params.name);
+			res.send(bookOpenlibrary);
 		});
 	}
 
@@ -32,63 +34,50 @@ export class Book {
 			.getOne();
 	}
 
-	private googleApi(name: string) {
-		return https.get(`https://www.googleapis.com/books/v1/volumes?q=${name}&maxResults=5`, resp => {
-			let data = "";
-			// A chunk of data has been recieved.
-			resp.on("data", chunk => {
-				data += chunk;
-			});
-			//Controlo los posibles errores por aqui
-			resp.on("error", error => {
-				return error;
-			});
-
-			// The whole response has been received. Print out the result.
-			resp.on("end", () => {
-				// console.log(data);
-				return data;
-			});
-		});
+	private async googleApi(name: string) {
+		try {
+			const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${name}&maxResults=5`).then(
+				response => {
+					return response.json();
+				}
+			);
+			return response;
+		} catch (error) {
+			return error;
+		}
 	}
 
-	private openlibraryApi(name: string) {
-		return https.get(`https://openlibrary.org/search.json?q=${name}&limit=10&mode=everything`, resp => {
-			let data = "";
-			// A chunk of data has been recieved.
-			resp.on("data", chunk => {
-				data += chunk;
-			});
-			//Controlo los posibles errores por aqui
-			resp.on("error", error => {
-				return error;
-			});
-
-			// The whole response has been received. Print out the result.
-			resp.on("end", () => {
-				// console.log(data);
-				return data;
-			});
-		});
+	/**
+	 * Busco en la api de openlibrary el libro
+	 * @param name String
+	 */
+	private async openlibraryApi(name: string) {
+		try {
+			const response = await fetch(`https://openlibrary.org/search.json?q=${name}&limit=10&mode=everything`).then(
+				response => {
+					return response.json();
+				}
+			);
+			return response;
+		} catch (error) {
+			return error;
+		}
 	}
 
-	private goodReadApi(name: string) {
-		return https.get(`https://www.goodreads.com/book/title.xml?title=${name}`, resp => {
-			let data = "";
-			// A chunk of data has been recieved.
-			resp.on("data", chunk => {
-				data += chunk;
-			});
-			//Controlo los posibles errores por aqui
-			resp.on("error", error => {
-				return error;
-			});
-
-			// The whole response has been received. Print out the result.
-			resp.on("end", () => {
-				// console.log(data);
+	/**
+	 * Busco en la api de goodRead el libre por el nombre
+	 * Transformo el xml que me devuelve la api en json
+	 * @param name Nombre del libro
+	 */
+	private async goodReadApi(name: string) {
+		try {
+			const response = await fetch(`https://www.goodreads.com/search/index.xml?key=a7b4XbLNjsabcn9TX7NMjw&q=${name}`);
+			const json = response.text().then(data => {
 				return JSON.parse(xml.xml2json(data, { compact: true, spaces: 4 }));
 			});
-		});
+			return json;
+		} catch (error) {
+			return error;
+		}
 	}
 }
