@@ -13,7 +13,7 @@ import { Book } from "./src/controller/Book";
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+
 app.use(cookieParser());
 
 /**
@@ -29,11 +29,11 @@ usuario.User(app);
 const book = new Book();
 book.Book(app);
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/api/", (req: Request, res: Response) => {
 	res.json("Server funcionando!");
 });
 
-app.get("/test", async (req: Request, res: Response) => {
+app.get("/api/test", async (req: Request, res: Response) => {
 	https.get("https://openlibrary.org/search.json?q=los%20juegos%20del%20hambre&limit=10&mode=everything", resp => {
 		let data = "";
 

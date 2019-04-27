@@ -7,15 +7,15 @@ import * as jwt from "jsonwebtoken";
 
 export class User {
 	public User(app) {
-		app.get("/register/:email/:username/:password", (req: Request, res: Response) => {
+		app.get("/api/register/:email/:username/:password", (req: Request, res: Response) => {
 			this.registrar(req, res);
 		});
 
-		app.get("/login/:username/:password", (req: Request, res: Response) => {
+		app.get("/api/login/:username/:password", (req: Request, res: Response) => {
 			this.login(req, res);
 		});
 
-		app.get("/checkcookie", (req: Request, res: Response) => {
+		app.get("/api/checkcookie", (req: Request, res: Response) => {
 			if (req.cookies.token) {
 				var decoded = jwt.verify(req.cookies.token, "secret");
 				res.json(decoded);
