@@ -1,9 +1,10 @@
 import { getConnection } from "typeorm";
 import { Request, Response } from "express";
 import { book } from "../entity/BookEntity";
-import * as https from "https";
 import * as xml from "xml-js";
 import fetch from "node-fetch";
+import { GoogleBooksInterface, items } from "../entity/model/GoogleBook";
+import { GoodReadsInterface, work } from "../entity/model/GoodReadsInterface";
 
 export class Book {
 	public Book(app) {
@@ -14,13 +15,20 @@ export class Book {
 		});
 
 		app.get("/api/searchapi/:name", async (req: Request, res: Response) => {
+			const bookGoogle = await this.googleApi(req.params.name);
+			let bookGoogleFormated = this.apiTransformerGoogle(bookGoogle);
+
+			const bookGoodRead = await this.goodReadApi(req.params.name);
+			let bookGoodReadFormated = this.apiTransformerGoodRead(bookGoodRead);
+
+			res.send({ GoogleBooks: bookGoogleFormated, GoodReads: bookGoodReadFormated });
+		});
+
+		app.get("/api/searchapinoformatted/:name", async (req: Request, res: Response) => {
 			const name: string = req.params.name;
 			const bookGoogle = await this.googleApi(req.params.name);
-			const bookOpenlibrary = await this.openlibraryApi(req.params.name);
-
-			let bookGoodRead = await this.goodReadApi(req.params.name);
-			let data = this.apiTransformerGoodRead(bookGoodRead);
-			res.send(data);
+			const bookGoodRead = await this.goodReadApi(req.params.name);
+			res.send({ GoogleBooks: bookGoogle, GoodReads: bookGoodRead });
 		});
 	}
 
@@ -50,21 +58,22 @@ export class Book {
 	}
 
 	/**
+	 * EN UN FUTURO ALOMEJOR SE AÑADE PERO POR AHORA NO HACE FALTA
 	 * Busco en la api de openlibrary el libro
 	 * @param name String
 	 */
-	private async openlibraryApi(name: string) {
-		try {
-			const response = await fetch(`https://openlibrary.org/search.json?q=${name}&limit=10&mode=everything`).then(
-				response => {
-					return response.json();
-				}
-			);
-			return response;
-		} catch (error) {
-			return error;
-		}
-	}
+	// private async openlibraryApi(name: string) {
+	// 	try {
+	// 		const response = await fetch(`https://openlibrary.org/search.json?q=${name}&limit=10&mode=everything`).then(
+	// 			response => {
+	// 				return response.json();
+	// 			}
+	// 		);
+	// 		return response;
+	// 	} catch (error) {
+	// 		return error;
+	// 	}
+	// }
 
 	/**
 	 * Busco en la api de goodRead el libre por el nombre
@@ -124,6 +133,40 @@ export class Book {
 					work: work
 				}
 			}
+		});
+	}
+
+	/**
+	 * Transformo los datos de googlebooks api a lo que yo quiera
+	 * @param data Respuesta googlebooks api
+	 */
+	private apiTransformerGoogle(data: any): GoogleBooksInterface {
+		let book: GoogleBooksInterface;
+		let items: items[] = [];
+
+		data.items.forEach(element => {
+			let item: items = {
+				volumeInfo: {
+					title: element.volumeInfo.title,
+					authors: element.volumeInfo.authors,
+					publisher: element.volumeInfo.publisher,
+					publishedDate: element.volumeInfo.publishedDate,
+					description: element.volumeInfo.description,
+					categories: element.volumeInfo.categories,
+					imageLinks: {
+						smallThumbnail: element.volumeInfo.imageLinks.smallThumbnail,
+						thumbnail: element.volumeInfo.imageLinks.thumbnail
+					},
+					language: element.volumeInfo.language
+				},
+				searchInfo: {
+					textSnippet: element.searchInfo.textSnippet
+				}
+			};
+			items.push(item);
+		});
+		return (book = {
+			items: items
 		});
 	}
 }
