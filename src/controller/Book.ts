@@ -11,21 +11,28 @@ export class Book {
 		app.get("/api/search/:name", async (req: Request, res: Response) => {
 			const name: string = req.params.name;
 			const book: book = await this.existDB(name);
-			res.json(book);
+			if(book){
+				res.json(book);
+			}else{
+				res.json({id: null, title: 'No existe el libro!'})
+			}
 		});
 
-		app.get("/api/searchapi/:name", async (req: Request, res: Response) => {
+		app.get("/api/searchapigoogle/:name", async (req: Request, res: Response) => {
 			const bookGoogle = await this.googleApi(req.params.name);
 			let bookGoogleFormated = this.apiTransformerGoogle(bookGoogle);
 
+			res.send(bookGoogleFormated);
+		});
+
+		app.get("/api/searchapigood/:name", async (req: Request, res: Response) => {
 			const bookGoodRead = await this.goodReadApi(req.params.name);
 			let bookGoodReadFormated = this.apiTransformerGoodRead(bookGoodRead);
 
-			res.send({ GoogleBooks: bookGoogleFormated, GoodReads: bookGoodReadFormated });
+			res.send(bookGoodReadFormated);
 		});
 
 		app.get("/api/searchapinoformatted/:name", async (req: Request, res: Response) => {
-			const name: string = req.params.name;
 			const bookGoogle = await this.googleApi(req.params.name);
 			const bookGoodRead = await this.goodReadApi(req.params.name);
 			res.send({ GoogleBooks: bookGoogle, GoodReads: bookGoodRead });
